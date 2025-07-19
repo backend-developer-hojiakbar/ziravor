@@ -1,11 +1,19 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { products } from '../data/mockData';
 import ProductCard from '../components/ProductCard';
+import { Product } from '../types';
+import { api } from '../services/api';
 
 const HomePage: React.FC = () => {
-  const popularProducts = products.slice(0, 4);
+  const [popularProducts, setPopularProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.getProducts()
+      .then(allProducts => setPopularProducts(allProducts.slice(0, 4)))
+      .catch(err => console.error("Error fetching popular products:", err))
+      .finally(() => setLoading(false));
+  }, []);
 
   const AdvantageIcon = ({ children }: { children: React.ReactNode }) => (
     <div className="mb-4 flex items-center justify-center h-16 w-16 rounded-full bg-cyan-400/10 border border-cyan-400/20 text-cyan-400">
@@ -14,8 +22,7 @@ const HomePage: React.FC = () => {
   );
 
   return (
-    <div className="space-y-20 md:space-y-32">
-      {/* Hero Section */}
+    <div className="space-y-20 md:space-y-32 pb-20">
       <section className="relative text-center py-20 md:py-32">
         <div className="container mx-auto px-4 relative z-10">
           <h1 className="text-5xl md:text-7xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white to-cyan-400 mb-4 tracking-tight" style={{textShadow: "0 0 30px rgba(0,198,255,0.4)"}}>
@@ -33,17 +40,19 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Popular Products Section */}
       <section className="container mx-auto px-4">
         <h2 className="text-4xl font-bold text-center mb-12 text-white" style={{textShadow: "0 0 15px rgba(255,255,255,0.2)"}}>Ommabop Mahsulotlar</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-          {popularProducts.map(product => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {loading ? (
+          <div className="text-center text-white">Yuklanmoqda...</div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {popularProducts.map(product => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
       </section>
 
-      {/* Advantages Section */}
       <section className="container mx-auto px-4">
         <div className="bg-white/5 backdrop-blur-lg rounded-2xl p-8 md:p-12 border border-white/10">
             <h2 className="text-4xl font-bold text-center mb-12 text-white">Nega Aynan Biz?</h2>

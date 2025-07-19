@@ -1,7 +1,7 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { products } from '../data/mockData';
+import { Product } from '../types';
+import { api } from '../services/api';
 import { useCart } from '../hooks/useCart';
 import PlusIcon from '../components/icons/PlusIcon';
 import MinusIcon from '../components/icons/MinusIcon';
@@ -9,63 +9,80 @@ import ProductCard from '../components/ProductCard';
 
 const ProductPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
-  const product = products.find(p => p.id === id);
+  
+  const [product, setProduct] = useState<Product | null>(null);
+  const [relatedProducts, setRelatedProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const [quantity, setQuantity] = useState(1);
   const [activeTab, setActiveTab] = useState<'desc' | 'props' | 'usage' | 'comp'>('desc');
-  const [mainImage, setMainImage] = useState(product?.imageUrl);
+  const [mainImage, setMainImage] = useState<string | undefined>(undefined);
   
   const { addToCart } = useCart();
-  
-  // Reset state if product changes
-  React.useEffect(() => {
-      const p = products.find(p => p.id === id);
-      if (p) {
-        setMainImage(p.imageUrl);
-        setQuantity(1);
-        setActiveTab('desc');
-      }
+
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+
+    api.getProductById(id)
+      .then(fetchedProduct => {
+        setProduct(fetchedProduct);
+        setMainImage(fetchedProduct.main_image);
+        api.getProducts({ category: fetchedProduct.category })
+          .then(allProducts => {
+            setRelatedProducts(allProducts.filter(p => p.id !== fetchedProduct.id).slice(0, 4));
+          });
+      })
+      .catch(() => setError("Mahsulotni yuklashda xatolik ro'y berdi."))
+      .finally(() => setLoading(false));
+
+    setQuantity(1);
+    setActiveTab('desc');
+
   }, [id]);
 
-
-  if (!product) {
+  if (loading) {
+    return <div className="text-center py-20 text-white">Yuklanmoqda...</div>;
+  }
+  
+  if (error || !product) {
     return (
       <div className="text-center py-20">
-        <h2 className="text-3xl font-bold text-white">Mahsulot topilmadi</h2>
+        <h2 className="text-3xl font-bold text-white">{error || 'Mahsulot topilmadi'}</h2>
         <Link to="/catalog" className="text-cyan-400 hover:underline mt-4 inline-block">Katalogga qaytish</Link>
       </div>
     );
   }
 
   const handleAddToCart = () => {
-    addToCart(product, quantity);
+    if (product) {
+      addToCart(product, quantity);
+    }
   };
-  
-  const relatedProducts = products.filter(p => p.category === product.category && p.id !== product.id).slice(0, 4);
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="bg-black/20 backdrop-blur-2xl p-6 md:p-8 rounded-2xl border border-white/10 shadow-2xl">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
-          {/* Image Gallery */}
           <div>
             <div className="aspect-square bg-black/20 rounded-xl overflow-hidden mb-4 border border-white/10">
               <img src={mainImage} alt={product.name} className="w-full h-full object-cover" />
             </div>
             <div className="grid grid-cols-5 gap-2">
-              {product.images.map((img, index) => (
+              {product.images.map((imgObj, index) => (
                 <button
-                  key={index}
-                  onClick={() => setMainImage(img)}
-                  className={`aspect-square rounded-lg overflow-hidden border-2 transition duration-200 ${mainImage === img ? 'border-cyan-400 shadow-md shadow-cyan-500/50' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                  key={imgObj.id}
+                  onClick={() => setMainImage(imgObj.image)}
+                  className={`aspect-square rounded-lg overflow-hidden border-2 transition duration-200 ${mainImage === imgObj.image ? 'border-cyan-400 shadow-md shadow-cyan-500/50' : 'border-transparent opacity-60 hover:opacity-100'}`}
                 >
-                  <img src={img} alt={`${product.name} - ${index + 1}`} className="w-full h-full object-cover" />
+                  <img src={imgObj.image} alt={`${product.name} - ${index + 1}`} className="w-full h-full object-cover" />
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Product Details */}
           <div>
             <p className="text-cyan-400 font-semibold mb-2">{product.category}</p>
             <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">{product.name}</h1>
@@ -83,14 +100,13 @@ const ProductPage: React.FC = () => {
               </div>
               <button
                 onClick={handleAddToCart}
-                disabled={!product.inStock}
+                disabled={!product.in_stock}
                 className="w-full sm:w-auto flex-grow bg-gradient-to-r from-teal-400 to-cyan-500 text-white font-bold py-4 px-8 rounded-full text-lg hover:from-teal-500 hover:to-cyan-600 transition-all duration-300 transform hover:scale-105 shadow-lg hover:shadow-cyan-500/50 disabled:from-gray-600 disabled:to-gray-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {product.inStock ? "Savatga qo'shish" : "Mavjud emas"}
+                {product.in_stock ? "Savatga qo'shish" : "Mavjud emas"}
               </button>
             </div>
             
-            {/* Info Tabs */}
             <div className="mt-8">
               <div className="border-b border-white/10">
                 <nav className="-mb-px flex space-x-6">

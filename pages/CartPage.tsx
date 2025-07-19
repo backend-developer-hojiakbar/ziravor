@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
@@ -32,13 +31,13 @@ const CartPage: React.FC = () => {
       <div className="bg-black/20 backdrop-blur-2xl p-4 md:p-8 rounded-2xl border border-white/10 shadow-2xl">
         <h1 className="text-4xl font-bold mb-8 text-white">Savat</h1>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Cart Items */}
           <div className="lg:col-span-2">
             <div className="space-y-4">
               {cartItems.map(item => (
                 <div key={item.id} className="flex flex-col sm:flex-row items-center justify-between p-4 border border-white/10 rounded-xl bg-white/5 transition-all hover:border-cyan-400/50">
                   <div className="flex items-center gap-4 w-full sm:w-auto mb-4 sm:mb-0">
-                    <img src={item.imageUrl} alt={item.name} className="w-24 h-24 object-cover rounded-lg border border-white/10" />
+                    {/* `imageUrl` o'rniga `main_image` ishlatiladi */}
+                    <img src={item.main_image} alt={item.name} className="w-24 h-24 object-cover rounded-lg border border-white/10" />
                     <div>
                       <h3 className="font-semibold text-lg text-white">{item.name}</h3>
                       <p className="text-gray-400">{item.price.toLocaleString('uz-UZ')} so'm / 100gr</p>
@@ -62,7 +61,6 @@ const CartPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-white/5 p-6 rounded-2xl sticky top-28 border border-white/10">
               <h2 className="text-2xl font-bold mb-6 text-white">Buyurtma xulosasi</h2>
